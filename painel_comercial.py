@@ -304,4 +304,8 @@ if botao_login and usuario in usuarios and senha == usuarios[usuario]["senha"]:
 # Mensagem de login
 else:
     st.title("Painel Tráfego - 2025")
-    st.warning("Por favor, faça login para acessar o sistema.\n\nLogin master:\nUsuário
+    st.warning("Por favor, faça login para acessar o sistema.\n\nLogin master:\nUsuário: admin\nSenha: admin123")
+    
+    # Imagem de boas-vindas
+    st.image("https://via.placeholder.com/800x400?text=Bem-vindo+ao+Painel+Trafego+2025", use_column_width=True)
+
