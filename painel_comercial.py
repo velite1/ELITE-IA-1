@@ -3,94 +3,181 @@ import streamlit as st
 from datetime import datetime, date
 import os
 
-# Funções auxiliares
-def carregar_arquivo(nome_arquivo, colunas):
-    return pd.read_csv(nome_arquivo) if os.path.exists(nome_arquivo) else pd.DataFrame(columns=colunas)
+st.set_page_config(page_title="Painel Comercial Avançado", layout="wide")
 
-def salvar_arquivo(df, nome_arquivo):
-    df.to_csv(nome_arquivo, index=False)
+# Função para carregar dados
+def carregar_dados():
+    if os.path.exists("leads.csv"):
+        return pd.read_csv("leads.csv")
+    else:
+        return pd.DataFrame(columns=["id", "nome", "numero", "cidade", "status", "valor", "data_lead", "data_venda", "atendente", "qualidade", "followup_data"])
 
-# Carregar dados
-df_leads = carregar_arquivo("leads.csv", ["id", "nome", "numero", "cidade", "status", "valor", "data_lead", "data_venda", "atendente", "qualidade", "followup_data"])
-df_cidades = carregar_arquivo("cidades.csv", ["cidade"])
-df_usuarios = {
-    "admin": {"senha": "admin123", "tipo": "supervisor"},
-    "atendente1": {"senha": "123", "tipo": "atendente"},
-}
+# Salvar dados
+def salvar_dados(df):
+    df.to_csv("leads.csv", index=False)
 
-# Configuração de tema
-tema = st.sidebar.radio("Selecione o Tema", ["Padrão", "Verde", "Dourado", "Branco"])
-cores = {
-    "Verde": "#28a745", "Dourado": "#ffd700", "Branco": "white"
-}
-st.markdown(f"<style>.css-1v3fvcr {{ background-color: {cores.get(tema, 'white')} }}</style>", unsafe_allow_html=True)
+# Função para carregar dados de cidades
+def carregar_cidades():
+    if os.path.exists("cidades.csv"):
+        return pd.read_csv("cidades.csv")
+    else:
+        return pd.DataFrame(columns=["cidade"])
 
-# Função de login
+# Salvar cidades
+def salvar_cidades(df):
+    df.to_csv("cidades.csv", index=False)
+
+# Carregando e preparando dados
+df = carregar_dados()
+df["data_lead"] = pd.to_datetime(df["data_lead"], errors='coerce')
+df["data_venda"] = pd.to_datetime(df["data_venda"], errors='coerce')
+df_cidades = carregar_cidades()
+
+# Sidebar - Login simples
+st.sidebar.title("Login")
 usuario = st.sidebar.text_input("Usuário")
 senha = st.sidebar.text_input("Senha", type="password")
-if st.sidebar.button("Entrar"):
-    if usuario in df_usuarios and senha == df_usuarios[usuario]["senha"]:
-        tipo_usuario = df_usuarios[usuario]["tipo"]
-        abas = ["Dashboard", "Novo Lead", "Follow-ups"]
-        if tipo_usuario == "supervisor":
-            abas.append("Configurações")
-        aba = st.sidebar.radio("Menu", abas)
+botao_login = st.sidebar.button("Entrar")
 
-        # Dashboard
-        if aba == "Dashboard":
-            st.title("Painel Comercial")
-            hoje = date.today()
-            leads_hoje = len(df_leads[df_leads["data_lead"].dt.date == hoje])
-            vendas_hoje = len(df_leads[df_leads["data_venda"].dt.date == hoje])
-            st.metric("Leads Hoje", leads_hoje)
-            st.metric("Vendas Hoje", vendas_hoje)
+usuarios = {
+    "admin": {"senha": "admin123", "tipo": "supervisor"},  # Usuário master
+    "atendente1": {"senha": "123", "tipo": "atendente"},
+    "supervisor": {"senha": "admin", "tipo": "supervisor"}
+}
 
-        # Novo Lead
-        elif aba == "Novo Lead":
-            st.title("Cadastrar Novo Lead")
-            with st.form("form_lead"):
-                nome = st.text_input("Nome")
-                numero = st.text_input("Telefone")
-                cidade = st.selectbox("Cidade", df_cidades["cidade"].unique())
-                status = st.selectbox("Status", ["vendido", "em negociação", "perdido", "pendente", "cancelado", "em análise", "aguardando pagamento", "em processo", "recusado", "não interessado"])
-                valor = st.number_input("Valor", min_value=0.0, step=10.0)
-                atendente = st.selectbox("Atendente", df_leads["atendente"].unique() if not df_leads.empty else [usuario])
-                qualidade = st.selectbox("Qualidade", ["Quente", "Morno", "Frio"])
-                followup = st.date_input("Data de Follow-up")
-                submitted = st.form_submit_button("Salvar Lead")
+# Seleção de tema
+tema = st.sidebar.radio("Selecione o Tema", ["Padrão", "Verde", "Dourado", "Branco"])
 
-                if submitted:
-                    novo_lead = {
-                        "id": df_leads["id"].max() + 1 if not df_leads.empty else 1,
-                        "nome": nome, "numero": numero, "cidade": cidade, "status": status, "valor": valor,
-                        "data_lead": datetime.today().strftime("%Y-%m-%d"), "data_venda": "", "atendente": atendente,
-                        "qualidade": qualidade, "followup_data": followup.strftime("%Y-%m-%d")
-                    }
-                    df_leads = pd.concat([df_leads, pd.DataFrame([novo_lead])], ignore_index=True)
-                    salvar_arquivo(df_leads, "leads.csv")
-                    st.success("Lead cadastrado com sucesso!")
+if tema == "Verde":
+    st.markdown(
+        """
+        <style>
+        .css-1v3fvcr {
+            background-color: #28a745;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+elif tema == "Dourado":
+    st.markdown(
+        """
+        <style>
+        .css-1v3fvcr {
+            background-color: #ffd700;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+elif tema == "Branco":
+    st.markdown(
+        """
+        <style>
+        .css-1v3fvcr {
+            background-color: white;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
-        # Follow-ups
-        elif aba == "Follow-ups":
-            st.title("Follow-ups do Dia")
-            hoje = date.today()
-            followups = df_leads[df_leads["followup_data"].fillna("1900-01-01").apply(lambda x: pd.to_datetime(x).date() == hoje)]
-            st.write(f"Quantidade de follow-ups hoje: {len(followups)}")
-            st.dataframe(followups)
+if botao_login and usuario in usuarios and senha == usuarios[usuario]["senha"]:
+    tipo_usuario = usuarios[usuario]["tipo"]
 
-        # Configurações - Supervisor
-        elif aba == "Configurações" and tipo_usuario == "supervisor":
-            st.title("Configurações")
-            st.subheader("Adicionar Cidade")
-            nova_cidade = st.text_input("Nova Cidade")
-            if st.button("Adicionar Cidade") and nova_cidade:
-                if nova_cidade not in df_cidades["cidade"].unique():
-                    df_cidades = pd.concat([df_cidades, pd.DataFrame([{"cidade": nova_cidade}])], ignore_index=True)
-                    salvar_arquivo(df_cidades, "cidades.csv")
-                    st.success("Cidade adicionada com sucesso!")
-                else:
-                    st.warning("Cidade já existe.")
-    else:
-        st.warning("Credenciais incorretas.")
+    abas_disponiveis = ["Dashboard", "Novo Lead", "Follow-ups", "Configurações"]
+    if tipo_usuario == "supervisor":
+        abas_disponiveis.append("Gestão de Logins")
+
+    aba = st.sidebar.radio("Menu", abas_disponiveis)
+
+    if aba == "Dashboard":
+        st.title("Painel de Métricas Comerciais")
+
+        data_hoje = date.today()
+        df_hoje = df[df["data_lead"].dt.date == data_hoje]
+
+        leads_hoje = len(df_hoje)
+        total_leads = len(df)
+        vendas_hoje = len(df[df["data_venda"].dt.date == data_hoje])
+        total_vendas = df["status"].str.lower().eq("vendido").sum()
+        ticket_medio = df[df["status"].str.lower() == "vendido"]["valor"].mean()
+
+        df_vendas = df[df["status"].str.lower() == "vendido"].copy()
+        df_vendas["tempo_fechamento"] = (df_vendas["data_venda"] - df_vendas["data_lead"]).dt.days
+        tempo_medio_fechamento = df_vendas["tempo_fechamento"].mean()
+
+        vendas_por_cidade = df_vendas.groupby("cidade")["id"].count()
+        atendimentos_por_atendente = df_hoje.groupby("atendente")["id"].count()
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Leads gerados hoje", leads_hoje)
+        col2.metric("Total de Leads", total_leads)
+        col3.metric("Total de Vendas", total_vendas)
+
+        col4, col5, col6 = st.columns(3)
+        col4.metric("Vendas hoje", vendas_hoje)
+        col5.metric("Ticket Médio", f"R$ {ticket_medio:.2f}" if not pd.isna(ticket_medio) else "-")
+        col6.metric("Tempo médio de fechamento", f"{tempo_medio_fechamento:.1f} dias" if not pd.isna(tempo_medio_fechamento) else "-")
+
+        st.subheader("Vendas por cidade")
+        st.bar_chart(vendas_por_cidade)
+
+        st.subheader("Atendimentos do dia por atendente")
+        st.bar_chart(atendimentos_por_atendente)
+
+    elif aba == "Novo Lead":
+        st.title("Cadastrar Novo Lead")
+        with st.form("form_lead"):
+            nome = st.text_input("Nome")
+            numero = st.text_input("Telefone")
+            cidade = st.selectbox("Cidade", df_cidades["cidade"].unique())
+            status = st.selectbox("Status", ["vendido", "em negociação", "perdido", "pendente", "cancelado", "em análise", "aguardando pagamento", "em processo", "recusado", "não interessado"])
+            valor = st.number_input("Valor", min_value=0.0, step=10.0)
+            atendente = st.selectbox("Atendente", df["atendente"].unique() if not df.empty else [usuario])
+            qualidade = st.selectbox("Qualidade", ["Quente", "Morno", "Frio"])
+            followup = st.date_input("Data de Follow-up")
+            submitted = st.form_submit_button("Salvar Lead")
+
+            if submitted:
+                novo_lead = {
+                    "id": df["id"].max() + 1 if not df.empty else 1,
+                    "nome": nome,
+                    "numero": numero,
+                    "cidade": cidade,
+                    "status": status,
+                    "valor": valor,
+                    "data_lead": datetime.today().strftime("%Y-%m-%d"),
+                    "data_venda": datetime.today().strftime("%Y-%m-%d") if status == "vendido" else "",
+                    "atendente": atendente,
+                    "qualidade": qualidade,
+                    "followup_data": followup.strftime("%Y-%m-%d")
+                }
+                df = pd.concat([df, pd.DataFrame([novo_lead])], ignore_index=True)
+                salvar_dados(df)
+                st.success("Lead cadastrado com sucesso!")
+
+    elif aba == "Follow-ups":
+        st.title("Follow-ups do dia")
+        hoje = date.today()
+        followups = df[df["followup_data"].fillna("1900-01-01").apply(lambda x: pd.to_datetime(x).date() == hoje)]
+        st.write(f"Quantidade de follow-ups hoje: {len(followups)}")
+        st.dataframe(followups)
+
+    elif aba == "Configurações":
+        st.title("Configurações de Atendentes e Cidades")
+        st.subheader("Alterar ou adicionar cidade")
+        nova_cidade = st.text_input("Nova Cidade")
+        if st.button("Adicionar Cidade") and nova_cidade:
+            if nova_cidade not in df_cidades["cidade"].unique():
+                df_cidades = pd.concat([df_cidades, pd.DataFrame([{"cidade": nova_cidade}])], ignore_index=True)
+                salvar_cidades(df_cidades)
+                st.success("Cidade adicionada com sucesso!")
+            else:
+                st.warning("Cidade já existe.")
+                
+    elif aba == "Gestão de Logins" and tipo_usuario == "supervisor":
+        st.title("Gestão de Logins de Usuários")
+        novo_nome = st.text_input("Novo Usuário")
+        novo_email = st.text_input("E-mail do Usuário")
+        foto = st.file_uploader("Foto do Atendente", type=["jpg", "png", "jpeg"])
+        if st.button("Adicionar Usuário") and novo_nome and novo_email:
+            usuarios[novo_nome] = {"senha": "senha123", "tipo": "atendente"}
+            st.success("Usuário adicionado com sucesso!")
+
 else:
-    st.warning("Por favor, faça login para acessar o sistema.")
+    st.warning("Por favor, faça login para acessar o sistema.\n\nLogin master:\nUsuário: admin\nSenha: admin123")
