@@ -1,3 +1,4 @@
+
 import pandas as pd
 import streamlit as st
 from datetime import datetime, date
@@ -13,7 +14,6 @@ def carregar_dados():
         return pd.DataFrame(columns=["id", "nome", "numero", "cidade", "status", "valor", "data_lead", "data_venda", "atendente", "qualidade", "followup_data"])
 
 # Salvar dados
-@st.cache_data(experimental_allow_widgets=True)
 def salvar_dados(df):
     df.to_csv("leads.csv", index=False)
 
@@ -29,6 +29,7 @@ senha = st.sidebar.text_input("Senha", type="password")
 botao_login = st.sidebar.button("Entrar")
 
 usuarios = {
+    "admin": {"senha": "admin123", "tipo": "supervisor"},  # Usuário master
     "atendente1": {"senha": "123", "tipo": "atendente"},
     "supervisor": {"senha": "admin", "tipo": "supervisor"}
 }
@@ -36,7 +37,11 @@ usuarios = {
 if botao_login and usuario in usuarios and senha == usuarios[usuario]["senha"]:
     tipo_usuario = usuarios[usuario]["tipo"]
 
-    aba = st.sidebar.radio("Menu", ["Dashboard", "Novo Lead", "Follow-ups", "Configurações"] if tipo_usuario == "supervisor" else ["Dashboard", "Novo Lead", "Follow-ups"])
+    abas_disponiveis = ["Dashboard", "Novo Lead", "Follow-ups"]
+    if tipo_usuario == "supervisor":
+        abas_disponiveis.append("Configurações")
+
+    aba = st.sidebar.radio("Menu", abas_disponiveis)
 
     if aba == "Dashboard":
         st.title("Painel de Métricas Comerciais")
@@ -123,5 +128,4 @@ if botao_login and usuario in usuarios and senha == usuarios[usuario]["senha"]:
                 st.warning("Atendente já existe.")
 
 else:
-    st.warning("Por favor, faça login para acessar o sistema.")
-
+    st.warning("Por favor, faça login para acessar o sistema.\n\nLogin master:\nUsuário: admin\nSenha: admin123")
