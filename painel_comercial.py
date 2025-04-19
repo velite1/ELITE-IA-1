@@ -1,5 +1,5 @@
 
-import pandas as pd
+            import pandas as pd
 import streamlit as st
 from datetime import datetime, date
 import os
@@ -17,10 +17,22 @@ def carregar_dados():
 def salvar_dados(df):
     df.to_csv("leads.csv", index=False)
 
+# Função para carregar dados de cidades
+def carregar_cidades():
+    if os.path.exists("cidades.csv"):
+        return pd.read_csv("cidades.csv")
+    else:
+        return pd.DataFrame(columns=["cidade"])
+
+# Salvar cidades
+def salvar_cidades(df):
+    df.to_csv("cidades.csv", index=False)
+
 # Carregando e preparando dados
 df = carregar_dados()
 df["data_lead"] = pd.to_datetime(df["data_lead"], errors='coerce')
 df["data_venda"] = pd.to_datetime(df["data_venda"], errors='coerce')
+df_cidades = carregar_cidades()
 
 # Sidebar - Login simples
 st.sidebar.title("Login")
@@ -34,12 +46,43 @@ usuarios = {
     "supervisor": {"senha": "admin", "tipo": "supervisor"}
 }
 
+# Seleção de tema
+tema = st.sidebar.radio("Selecione o Tema", ["Padrão", "Verde", "Dourado", "Branco"])
+
+if tema == "Verde":
+    st.markdown(
+        """
+        <style>
+        .css-1v3fvcr {
+            background-color: #28a745;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+elif tema == "Dourado":
+    st.markdown(
+        """
+        <style>
+        .css-1v3fvcr {
+            background-color: #ffd700;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+elif tema == "Branco":
+    st.markdown(
+        """
+        <style>
+        .css-1v3fvcr {
+            background-color: white;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
 if botao_login and usuario in usuarios and senha == usuarios[usuario]["senha"]:
     tipo_usuario = usuarios[usuario]["tipo"]
 
-    abas_disponiveis = ["Dashboard", "Novo Lead", "Follow-ups"]
+    abas_disponiveis = ["Dashboard", "Novo Lead", "Follow-ups", "Configurações"]
     if tipo_usuario == "supervisor":
-        abas_disponiveis.append("Configurações")
+        abas_disponiveis.append("Gestão de Logins")
 
     aba = st.sidebar.radio("Menu", abas_disponiveis)
 
@@ -83,8 +126,8 @@ if botao_login and usuario in usuarios and senha == usuarios[usuario]["senha"]:
         with st.form("form_lead"):
             nome = st.text_input("Nome")
             numero = st.text_input("Telefone")
-            cidade = st.text_input("Cidade")
-            status = st.selectbox("Status", ["vendido", "em negociação", "perdido"])
+            cidade = st.selectbox("Cidade", df_cidades["cidade"].unique())
+            status = st.selectbox("Status", ["vendido", "em negociação", "perdido", "pendente", "cancelado", "em análise", "aguardando pagamento", "em processo", "recusado", "não interessado"])
             valor = st.number_input("Valor", min_value=0.0, step=10.0)
             atendente = st.selectbox("Atendente", df["atendente"].unique() if not df.empty else [usuario])
             qualidade = st.selectbox("Qualidade", ["Quente", "Morno", "Frio"])
@@ -116,16 +159,26 @@ if botao_login and usuario in usuarios and senha == usuarios[usuario]["senha"]:
         st.write(f"Quantidade de follow-ups hoje: {len(followups)}")
         st.dataframe(followups)
 
-    elif aba == "Configurações" and tipo_usuario == "supervisor":
-        st.title("Configurações de Atendentes")
-        novo_nome = st.text_input("Novo Atendente")
-        if st.button("Adicionar Atendente") and novo_nome:
-            if novo_nome not in df["atendente"].unique():
-                df = pd.concat([df, pd.DataFrame([{**{col: "" for col in df.columns}, "atendente": novo_nome}])], ignore_index=True)
-                salvar_dados(df)
-                st.success("Atendente adicionado!")
+    elif aba == "Configurações":
+        st.title("Configurações de Atendentes e Cidades")
+        st.subheader("Alterar ou adicionar cidade")
+        nova_cidade = st.text_input("Nova Cidade")
+        if st.button("Adicionar Cidade") and nova_cidade:
+            if nova_cidade not in df_cidades["cidade"].unique():
+                df_cidades = pd.concat([df_cidades, pd.DataFrame([{"cidade": nova_cidade}])], ignore_index=True)
+                salvar_cidades(df_cidades)
+                st.success("Cidade adicionada com sucesso!")
             else:
-                st.warning("Atendente já existe.")
+                st.warning("Cidade já existe.")
+                
+    elif aba == "Gestão de Logins" and tipo_usuario == "supervisor":
+        st.title("Gestão de Logins de Usuários")
+        novo_nome = st.text_input("Novo Usuário")
+        novo_email = st.text_input("E-mail do Usuário")
+        foto = st.file_uploader("Foto do Atendente", type=["jpg", "png", "jpeg"])
+        if st.button("Adicionar Usuário") and novo_nome and novo_email:
+            usuarios[novo_nome] = {"senha": "senha123", "tipo": "atendente"}
+            st.success("Usuário adicionado com sucesso!")
 
 else:
     st.warning("Por favor, faça login para acessar o sistema.\n\nLogin master:\nUsuário: admin\nSenha: admin123")
