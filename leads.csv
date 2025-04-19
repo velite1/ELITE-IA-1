@@ -1,0 +1,21 @@
+id,nome,cidade,status,valor,data_lead,data_venda,atendente,qualidade,followup_data
+1,João Silva,Belo Horizonte,em negociação,0,2025-04-11,,Aline,Morno,2025-04-14
+2,Maria Oliveira,Campinas,vendido,124,2025-04-11,2025-04-14,Felipe,Frio,2025-04-12
+3,Fernanda Lima,Belo Horizonte,vendido,135,2025-04-13,2025-04-18,Felipe,Quente,
+4,Ana Paula,Curitiba,em negociação,0,2025-04-14,,Felipe,Morno,2025-04-17
+5,Ana Paula,São Paulo,perdido,0,2025-04-14,,Felipe,Frio,2025-04-17
+6,João Silva,Campinas,vendido,135,2025-04-09,2025-04-14,Lucas,Morno,
+7,Ana Paula,Campinas,vendido,111,2025-04-18,2025-04-21,Felipe,Quente,
+8,João Silva,Rio de Janeiro,vendido,150,2025-04-17,2025-04-22,Aline,Frio,2025-04-18
+9,João Silva,Curitiba,perdido,0,2025-04-18,,Aline,Morno,
+10,Carlos Souza,São Paulo,em negociação,0,2025-04-18,,Roberta,Quente,2025-04-21
+11,Fernanda Lima,São Paulo,vendido,78,2025-04-14,2025-04-17,Lucas,Morno,2025-04-17
+12,Ana Paula,Curitiba,perdido,0,2025-04-10,,Lucas,Quente,2025-04-10
+13,Fernanda Lima,Campinas,vendido,91,2025-04-19,2025-04-20,Aline,Frio,
+14,Carlos Souza,Curitiba,perdido,0,2025-04-13,,Lucas,Morno,2025-04-15
+15,Maria Oliveira,São Paulo,em negociação,0,2025-04-15,,Roberta,Quente,
+16,Maria Oliveira,São Paulo,em negociação,0,2025-04-14,,Aline,Morno,2025-04-15
+17,Carlos Souza,Curitiba,vendido,133,2025-04-11,2025-04-14,Felipe,Frio,
+18,Fernanda Lima,Campinas,vendido,76,2025-04-10,2025-04-13,Lucas,Quente,2025-04-13
+19,Fernanda Lima,Belo Horizonte,perdido,0,2025-04-09,,Lucas,Quente,
+20,João Silva,Curitiba,vendido,79,2025-04-17,2025-04-20,Lucas,Frio,2025-04-17
