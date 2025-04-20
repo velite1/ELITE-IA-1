@@ -1,0 +1,18 @@
+# app.py
+import streamlit as st
+from utils.auth import check_login
+from pages import leads, metrics, followups
+
+# Verifica login
+if 'user' not in st.session_state:
+    check_login()
+else:
+    st.sidebar.title(f"Bem-vindo, {st.session_state.user['nome']}")
+    pagina = st.sidebar.selectbox("Escolha uma página", ["Gestão de Leads", "Métricas Comerciais", "Follow-ups"])
+
+    if pagina == "Gestão de Leads":
+        leads.show()
+    elif pagina == "Métricas Comerciais":
+        metrics.show()
+    elif pagina == "Follow-ups":
+        followups.show()
